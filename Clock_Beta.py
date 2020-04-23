@@ -36,6 +36,22 @@ class EventedClockedAndObject(threading.Thread):
             result = And(1,1)
             print(result)
 
+class EventedElement(threading.Thread):
+    def __init__(self, event):
+        self.event = event
+        threading.Thread.__init__(self)
+
+    def run(self):
+        while(1):
+            self.event.wait()
+            result = logic()
+            print(result)
+
+    def logic(self):
+        pass
+
+    
+
 
 
 if __name__ == '__main__':
