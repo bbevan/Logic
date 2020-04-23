@@ -1,4 +1,4 @@
-# Primitive Element
+# Primitive Elements & Such ---------------------------------------------------------------------
 def Nand(a,b):
     # return 0 only if a == b == 1
     if (a == 1) and b == 1:
@@ -31,8 +31,67 @@ class Clock(threading.Thread):
     def get_e(self):
         return self.e
 
+# Evented Logic Element
+from threading import Thread
+class EventedElement(threading.Thread):
+    def __init__(self, event):
+        self.event = event
+        threading.Thread.__init__(self)
 
-# Combinational Logic
+    def run(self):
+        while(1):
+            self.event.wait()
+            result = logic()
+            print(result)
+
+    def logic(self):
+        pass
+
+# Clock base class
+class Clock:
+    def __init__(self):
+        # states
+        self.state = 0
+
+    def update_state(self):
+        if self.state == 0:
+            self.state = 1
+        else:
+            self.state = 0
+
+        return 0
+
+# Evented Threaded Clock
+class EventedThreadedClock(Clock, threading.Thread):
+
+    def __init__(self, event):
+        self.state = Clock.__init__(self)
+        threading.Thread.__init__(self)
+        self.event = event
+
+    def run(self):
+        while(1):
+            self.update_state()
+            self.event.set()
+            self.event.clear()
+            time.sleep(1)
+
+class EventedElement(threading.Thread):
+    def __init__(self, event):
+        self.event = event
+        threading.Thread.__init__(self)
+
+    def run(self):
+        while(1):
+            self.event.wait()
+            result = logic()
+            print(result)
+
+    def logic(self):
+        pass
+
+
+# Combinational Logic -----------------------------------------------------------------
 def Not(a):
     # Working now
     return Nand(a,1)
@@ -127,6 +186,58 @@ class SRLatch:
         #self.circuit(0,1)
         self.circuit(0,1)
 
+# Clocked SR Latch
+class EventedClockedSRLatch(threading.Thread):
+    def __init__(self, event):
+        self.q1 = 1
+        self.nq1 = 0
+        self.q2 = 1
+        self.nq2 = 0
+        self.clockstate = 0
+
+        threading.Thread.__init__(self)
+        self.event = event
+
+    #API
+    def set(self, bit):
+        pass
+
+    def reset(self):
+        pass
+
+    def run(self):
+        while(1):
+            self.event.wait()
+            self.logic(1,0)
+            print(self.q2)
+
+    def update_clockstate(self, state):
+        self.clockstate = state
+    
+    # Circuit
+    def logic(self, s, r):
+
+        temp1 = self.q2
+        temp2 = self.nq2
+        
+        # run the next state
+        if self.clockstate == 1:
+
+            self.q1 = Nand(s, self.clockstate)
+            self.nq1 = Nand(self.clockstate, r)
+
+            # Run the next state
+            if (s == 1 and r == 0):                
+                self.q2 = Nand(self.q1, temp2)
+                self.nq = Nand(temp1, self.nq2)
+            elif (s == 0 and r == 1):
+                # reset state
+                # in this case, run the circuit the other way
+                Nand(temp1, self.nq2)
+                self.q = Nand(self.q1, temp2)
+            
+
+
 # Register Class
 # defines an 8-bit shift register
 # Watch out for endianess (!)
@@ -161,4 +272,16 @@ class Register:
 # TODO: Write the Clocked RS Latch class.
 # TODO: Write the Clock class.
 
-    
+if __name__ == '__main__':
+    print("In main.")
+
+    Clock_Ready = threading.Event()
+
+
+    # spawn an EventedThreadedClock
+    etc = EventedThreadedClock(Clock_Ready)
+    etc.start()
+
+    #EventedClockedAnd(1, 1, Clock_Ready)
+    cl = EventedClockedSRLatch(Clock_Ready)
+    cl.start()
